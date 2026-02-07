@@ -12,10 +12,33 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, disabled }) =
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Compress large images client-side to reduce payload size and avoid
+      // hitting serverless function body limits.
+      const img = new Image();
       const reader = new FileReader();
       reader.onload = (event) => {
-        const base64 = event.target?.result as string;
-        onFileSelect(base64);
+        const src = event.target?.result as string;
+        img.onload = () => {
+          const MAX_DIM = 1600;
+          let { width, height } = img;
+          if (width > MAX_DIM || height > MAX_DIM) {
+            const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.8);
+          onFileSelect(compressed);
+        };
+        img.onerror = () => {
+          // fallback to original if image fails to load/compress
+          onFileSelect(src);
+        };
+        img.src = src;
       };
       reader.readAsDataURL(file);
     }

@@ -56,17 +56,28 @@ if (!apiKey) {
 const ai = new GoogleGenAI({ apiKey });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  console.log('[analyze] request method:', req.method);
+  console.log('[analyze] body size:', JSON.stringify(req.body).length, 'bytes');
+  
   try {
     if (req.method !== 'POST') {
+      console.warn('[analyze] invalid method:', req.method);
       res.status(405).send('Method Not Allowed');
       return;
     }
     const { image } = req.body || {};
-    if (!image) return res.status(400).send('Missing image in request body');
+    if (!image) {
+      console.warn('[analyze] missing image in body');
+      return res.status(400).send('Missing image in request body');
+    }
 
+    console.log('[analyze] image size:', image.length, 'bytes');
     const matches = image.match(/^data:([^;]+);base64,(.+)$/);
     const mimeType = matches ? matches[1] : 'image/jpeg';
     const data = matches ? matches[2] : image;
+    
+    console.log('[analyze] mime type:', mimeType);
+    console.log('[analyze] calling Gemini API...');
 
     const prompt = `Analizza questa bolletta energetica italiana.
 1. Estrai i KPI unitari variabili (€/kWh o €/smc).
@@ -86,12 +97,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     });
 
-    if (!response.text) return res.status(502).send('AI response empty');
+    console.log('[analyze] Gemini response received');
+    if (!response.text) {
+      console.error('[analyze] empty response from Gemini');
+      return res.status(502).send('AI response empty');
+    }
 
     const parsed = JSON.parse(response.text);
+    console.log('[analyze] response parsed successfully');
     res.status(200).json(parsed);
   } catch (err: any) {
-    console.error('analyze error', err);
-    res.status(500).send(err?.message || String(err));
+    console.error('[analyze] error:', err?.message || String(err), err);
+    res.status(500).send(err?.message || 'Internal Server Error');
   }
 }

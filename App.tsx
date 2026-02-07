@@ -22,11 +22,22 @@ const App: React.FC = () => {
       setState({ isProcessing: false, result: data, error: null });
     } catch (err: any) {
       console.error("Analysis Error:", err);
+      const errorMsg = err?.message || "Errore durante l'analisi. Verifica che lo storico consumi e il dettaglio fasce siano leggibili.";
       setState({ 
         isProcessing: false, 
         result: null, 
-        error: "Errore durante l'analisi. Verifica che lo storico consumi e il dettaglio fasce siano leggibili." 
+        error: errorMsg
       });
+    }
+  };
+
+  const testAPI = async () => {
+    try {
+      const res = await fetch('/api/health');
+      const data = await res.json();
+      alert(`API Status: ${JSON.stringify(data, null, 2)}`);
+    } catch (err: any) {
+      alert(`API Error: ${err?.message || String(err)}`);
     }
   };
 
@@ -77,6 +88,9 @@ const App: React.FC = () => {
         <div className="text-center mb-10">
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">BillAI Analytics Engine</h1>
           <p className="mt-4 text-lg text-slate-600">Dall'immagine ai KPI: normalizzazione, storico e scomposizione tariffe.</p>
+          <button onClick={testAPI} className="mt-4 text-sm text-blue-600 hover:text-blue-700 underline">
+            [Test API Status]
+          </button>
         </div>
 
         {!state.result && !state.isProcessing && (
@@ -89,6 +103,12 @@ const App: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-xl p-12 flex flex-col items-center justify-center text-center space-y-6 max-w-2xl mx-auto border border-slate-100">
             <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             <h2 className="text-xl font-bold text-slate-900">Analisi Storica Multidimensionale...</h2>
+          </div>
+        )}
+
+        {state.error && (
+          <div className="max-w-2xl mx-auto p-4 bg-red-50 border border-red-200 rounded-2xl text-red-800 mb-6">
+            <strong>Errore:</strong> {state.error}
           </div>
         )}
 
