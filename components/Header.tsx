@@ -2,6 +2,16 @@
 import React from 'react';
 
 const Header: React.FC = () => {
+  const testApi = async () => {
+    try {
+      const res = await fetch('/api/health');
+      const data = await res.json();
+      alert(`API Status:\n${JSON.stringify(data, null, 2)}`);
+    } catch (err: any) {
+      alert(`API Error: ${err?.message || String(err)}`);
+    }
+  };
+
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -16,9 +26,14 @@ const Header: React.FC = () => {
           <a href="#" className="hover:text-blue-600 transition-colors">Storico</a>
           <a href="#" className="hover:text-blue-600 transition-colors">Confronto Tariffe</a>
         </nav>
-        <button className="bg-slate-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-slate-800 transition-all">
-          Accedi
-        </button>
+        <div className="flex items-center space-x-3">
+          <button onClick={testApi} className="text-sm text-blue-600 hover:text-blue-800 underline">
+            Test API
+          </button>
+          <button className="bg-slate-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-slate-800 transition-all">
+            Accedi
+          </button>
+        </div>
       </div>
     </header>
   );
