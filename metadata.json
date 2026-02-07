@@ -1,0 +1,7 @@
+{
+  "name": "BillAI - Estrattore Dati Bollette",
+  "description": "Un'applicazione intelligente per analizzare le tue bollette energetiche, estrarre automaticamente i dati di consumo per fasce (F1, F2, F3), il prezzo dell'energia e la potenza impegnata.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
