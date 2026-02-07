@@ -1,8 +1,9 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
 import { BillData } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+// NOTE: `@google/genai` is a server-side SDK and must NOT be imported at
+// top-level in a frontend bundle (it can leak API keys or require Node APIs).
+// We dynamically import it only when running in a Node/server environment.
 
 const BILL_ANALYSIS_SCHEMA = {
   type: Type.OBJECT,
@@ -53,6 +54,29 @@ const BILL_ANALYSIS_SCHEMA = {
 };
 
 export async function analyzeBill(base64Image: string): Promise<BillData> {
+  // If running in the browser, call the serverless API route which performs the
+  // AI call. This keeps the API key and SDK usage on the server.
+  if (typeof window !== "undefined") {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: base64Image }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Server error: ${res.status} ${text}`);
+    }
+    return (await res.json()) as BillData;
+  }
+
+  // Server-side dynamic import to avoid bundling @google/genai into client builds.
+  const { GoogleGenAI, Type } = await import("@google/genai");
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY environment variable is not set');
+  }
+  const ai = new GoogleGenAI({ apiKey });
+
   const model = "gemini-3-pro-preview";
   const matches = base64Image.match(/^data:([^;]+);base64,(.+)$/);
   const mimeType = matches ? matches[1] : "image/jpeg";
